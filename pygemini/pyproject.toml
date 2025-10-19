@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gemini3d"
+description = "3-D ionospheric model plotting suite"
+keywords = ["mesosphere", "stratosphere", "thermosphere", "ionosphere"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Intended Audience :: Science/Research",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Atmospheric Science"
+]
+requires-python = ">=3.9"
+dynamic = ["version", "readme"]
+dependencies = ["python-dateutil", "numpy", "xarray>=0.16.0", "scipy", "h5py", "matplotlib >= 3.1"]
+
+[tool.setuptools]
+zip-safe = false
+
+[tool.setuptools.dynamic]
+readme = {file = ["README.md"], content-type = "text/markdown"}
+version = {attr = "gemini3d.__version__"}
+
+[project.optional-dependencies]
+tests = ["pytest"]
+lint = ["flake8", "flake8-bugbear", "flake8-builtins", "flake8-blind-except", "mypy",
+  "types-python-dateutil"]
+
+[tool.black]
+line-length = 90
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.mypy]
+files = ["src", "scripts"]
+
+ignore_missing_imports = true
+allow_redefinition = true
+show_error_context = false
+show_column_numbers = true
+
+[tool.pytest.ini_options]
+log_cli = true
+log_cli_level = "WARNING"
+log_cli_format = "%(levelname)s"
+addopts = "--ignore=archive/"

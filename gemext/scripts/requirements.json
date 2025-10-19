@@ -1,0 +1,26 @@
+{
+  "apt": {
+    "pkgs": ["libopenmpi-dev", "openmpi-bin", "libhdf5-dev"],
+    "cmd": "apt install --no-install-recommends"
+  },
+  "yum": {
+    "pkgs": ["epel-release", "openmpi-devel", "hdf5-devel"],
+    "cmd": "yum install"
+  },
+  "pacman": {
+    "pkgs": ["openmpi", "hdf5"],
+    "cmd": "pacman -S --needed"
+  },
+  "zypper": {
+    "pkgs": ["hdf5-devel"],
+    "cmd": "zypper install"
+  },
+  "brew": {
+    "pkgs": ["open-mpi", "hdf5"],
+    "cmd": "brew install"
+  },
+  "port": {
+    "pkgs": ["openmpi", "hdf5"],
+    "cmd": "port install"
+  }
+}

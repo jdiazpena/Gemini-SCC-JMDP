@@ -1,0 +1,37 @@
+{
+
+"external": {
+  "url": "https://github.com/gemini3d/external.git",
+  "tag": "main"
+},
+
+"openmpi": {
+  "url": "https://download.open-mpi.org/release/open-mpi/v4.1/openmpi-4.1.6.tar.bz2"
+},
+"mpich": {
+  "url": "https://www.mpich.org/static/downloads/4.1.2/mpich-4.1.2.tar.gz"
+},
+
+"mumps": {
+  "url": "https://github.com/scivision/mumps.git",
+  "tag": "v5.6.2.2"
+},
+"mumps_src": {
+  "sha256": "13a2c1aff2bd1aa92fe84b7b35d88f43434019963ca09ef7e8c90821a8f1d59a",
+  "url": "https://mumps-solver.org/MUMPS_5.6.2.tar.gz"
+},
+
+"scalapack": {
+  "url": "https://github.com/scivision/scalapack.git",
+  "tag": "v2.2.1.6"
+},
+"scalapack_src": {
+  "tag": "v2.2.1",
+  "url": "https://github.com/Reference-ScaLAPACK/scalapack.git"
+},
+
+"lapack": {
+  "url": "https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.12.0.tar.gz"
+}
+
+}

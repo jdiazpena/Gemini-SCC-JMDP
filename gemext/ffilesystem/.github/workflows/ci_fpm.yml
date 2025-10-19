@@ -1,0 +1,24 @@
+name: ci_fpm
+
+on:
+  push:
+    paths:
+      - "fpm.toml"
+      - ".github/workflows/ci_fpm.yml"
+
+
+jobs:
+
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+
+    - uses: fortran-lang/setup-fpm@v5
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - uses: actions/checkout@v4
+
+    - run: fpm build

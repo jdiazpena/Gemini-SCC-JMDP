@@ -1,0 +1,106 @@
+name: ci
+
+env:
+  HOMEBREW_NO_INSTALL_CLEANUP: 1
+  CTEST_NO_TESTS_ACTION: error
+  CMAKE_BUILD_PARALLEL_LEVEL: 4
+  CTEST_PARALLEL_LEVEL: 4
+
+on:
+  push:
+    paths:
+      - "**.f"
+      - "**.f90"
+      - "**.F90"
+      - "**/CMakeLists.txt"
+      - "**.cmake"
+      - ".github/workflows/ci.yml"
+
+jobs:
+
+  core:
+    strategy:
+      matrix:
+        shared: [true, false]
+        msis2: [true, false]
+        os: [ubuntu-latest, macos-latest]
+        # future, these work
+        # libhdf5-mpi-dev
+        # hdf5-mpi
+
+    env:
+      FC: gfortran-13
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install system libs (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt update
+        sudo apt install libhdf5-dev
+
+    - name: Install system libs (macOS)
+      if: runner.os == 'macOS'
+      run: brew install hdf5
+
+    - name: Configure MSIS msis2=${{ matrix.msis2 }} shared=${{ matrix.shared }}
+      run: >-
+        cmake --preset default
+        -Dmsis2:BOOL=${{ matrix.msis2 }}
+        -DBUILD_SHARED_LIBS:BOOL=${{ matrix.shared }}
+        -DCMAKE_INSTALL_PREFIX=${{ runner.temp }}
+
+    - name: Build MSIS
+      run: cmake --build --preset default
+
+    - name: Test MSIS
+      run: ctest --preset default
+
+    - name: Install MSIS
+      run: cmake --install build
+
+    - name: Example-build & test
+      run: cmake --workflow --preset default
+      env:
+        CMAKE_PREFIX_PATH: ${{ runner.temp }}
+      working-directory: example
+
+
+  windows:
+    timeout-minutes: 20
+    runs-on: windows-latest
+    env:
+      CMAKE_GENERATOR: MinGW Makefiles
+
+    strategy:
+      matrix:
+        msis2: [true, false]
+        # shared: [true, false]
+        # shared always error 135 even on only msis shared. not a problem on real pc.
+
+    steps:
+    - uses: msys2/setup-msys2@v2
+      with:
+        update: true
+        install: >-
+          mingw-w64-x86_64-gcc-fortran
+          mingw-w64-x86_64-hdf5
+
+    - name: Put MSYS2_MinGW64 on PATH
+      # this is because GNU Patch doesn't work from MSYS2 shell
+      run: echo "${{ runner.temp }}/msys64/mingw64/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+    - uses: actions/checkout@v3
+
+    - name: Configure MSIS
+      run: cmake --preset default -Dmsis2:BOOL=${{ matrix.msis2 }}
+
+    - name: Build MSIS
+      run: cmake --build --preset default
+
+    - name: Test MSIS
+      run: ctest --preset default

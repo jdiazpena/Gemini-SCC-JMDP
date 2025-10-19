@@ -1,0 +1,96 @@
+! cusp simulation
+
+&base
+ymd = 2008,3,26               ! year, month, day
+UTsec0 = 75600.0              ! start time in UT seconds
+tdur = 900.0                  ! duration of simulation in seconds
+dtout = 1                  ! how often to do file output
+activ = 52.0,52.0,2.5       ! f107a,f107,Ap
+tcfl = 0.9                    ! target cfl number
+Teinf = 1000                 ! exospheric electron temperature-0.5e-8 (w/m2) -0.6e-5 
+/
+
+! (optional - default off) whether or not to do milestone outputs; only works with h5 file output
+!&milestone
+!mcadence=60                   ! number of outputs per milestone
+!/
+
+&flags
+potsolve = 1        ! solve electrodynamics:   0 - no; 1 - electrostatic; 2 - inductive
+flagperiodic = 0    ! whether periodic
+flagoutput = 1      ! 1 - all state variables; 2 - averaged plasma parameters; 3 - electron density only
+/
+
+! Optional - default off 0 - no FBI. 1 - includes only EAH. 2 - Includes EAH and NLC
+&FBI 
+flagFBI = 1
+/
+
+! Optional - default on 1. 0 - uses old vib and rot losses
+&evibcool 
+flagevibcool = 1  
+/
+
+&setup
+dtheta=5
+dphi=70
+lp=512 !lat 128
+lq=512 !alt 128 256 512
+lphi=512 !lon 128 always do a multiple of 16 here to use all cores
+altmin=80e3
+glat=60
+glon=0
+gridflag=0 !0 - closed dipole, 1 - non-inverted grid, 2 - inverted grid
+
+Efield_latwidth=0.02 !0.0125, 0.05 standar
+Efield_lonwidth=0.2 !0.15
+
+Efield_llon=512 !make them same as the grid maybe?
+Efield_llat=512
+
+precip_latwidth=0.0145 !0.0125, 0.05 standar
+precip_lonwidth=0.2 !0.15
+
+precip_llon=512 !make them same as the grid maybe?
+precip_llat=512
+
+Qprecip=0.5 ! total energy flux (mW/m^2)
+E0precip=2.0e3 ! characteristic energy (eV)
+
+Qprecip_background = 3.0e-3
+E0precip_background = 1.75e3
+
+Qprecip_function = "Qsaid'
+E0precip_function = "Esaid'
+
+Jtarg=0.5e-6
+Jtarg_function = "fac"
+
+eq_dir = '/projectnb/semetergrp/gemini3dfbi/gemini3d_sims/240204_said_eq_52f6e3Q175E/'
+!eq_dir = '/projectnb/burbsp/jmdptemp/gemini3d_sims/240131_said_eq_52fsomeBG'
+/
+
+&files
+indat_size = 'inputs/simsize.h5'
+indat_grid = 'inputs/simgrid.h5'
+indat_file = 'inputs/initial_conditions.h5'
+/
+
+&efield
+dtE0 = 5.0                         ! time step between electric field file inputs
+E0_dir = 'inputs/fields/'
+/
+
+&precip
+dtprec = 5.0
+prec_dir = 'inputs/precip/'
+/
+
+&diffusion
+diffsolvetype = 1
+/
+
+&precip_BG
+PhiWBG=1.0e-9                   ! total energy flux (mW/m^2)
+W0BG=1.75e3                      ! characteristic energy (eV)
+/

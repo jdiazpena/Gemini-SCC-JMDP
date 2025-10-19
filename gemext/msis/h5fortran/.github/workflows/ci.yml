@@ -1,0 +1,197 @@
+name: ci
+
+env:
+  HOMEBREW_NO_INSTALL_CLEANUP: 1
+  CTEST_NO_TESTS_ACTION: error
+  CTEST_PARALLEL_LEVEL: 4
+  CMAKE_BUILD_PARALLEL_LEVEL: 4
+
+on:
+  push:
+    paths:
+      - "**.c"
+      - "**.cpp"
+      - "**.f90"
+      - "**.F90"
+      - "**/CMakeLists.txt"
+      - "**.cmake"
+      - ".github/workflows/ci.yml"
+      - "!memcheck.cmake"
+      - "!coverage.cmake"
+
+
+jobs:
+
+  core:
+    timeout-minutes: 15
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        shared: [false]
+        gcc: [9, 10, 11, 12, 13]
+        include:
+        - os: ubuntu-latest
+          shared: true
+          gcc: 13
+        - os: macos-latest
+          shared: true
+          gcc: 13
+        - os: macos-latest
+          shared: false
+          gcc: 13
+
+    runs-on: ${{ matrix.os }}
+    env:
+      CC: gcc-${{ matrix.gcc }}
+      FC: gfortran-${{ matrix.gcc }}
+
+    steps:
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Python pkgs
+      run: pip install numpy h5py
+
+    - name: install HDF5 (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt update
+        sudo apt install --no-install-recommends ninja-build libhdf5-dev
+
+    - name: Install HDF5 (MacOS)
+      if: runner.os == 'macOS'
+      run: brew install hdf5 ninja
+
+    - uses: actions/checkout@v4
+
+    - name: Configure
+      run: >-
+        cmake --preset multi
+        --install-prefix ${{ runner.temp }}
+        -DBUILD_SHARED_LIBS:BOOL=${{ matrix.shared }}
+
+    - name: Build / test Debug
+      run: cmake --workflow --preset debug
+
+    - name: Build Release
+      run: cmake --workflow --preset release
+
+    - name: install package
+      run: cmake --install build
+
+    - name: example workflow
+      run: cmake -S example -B example/build -DCMAKE_PREFIX_PATH=${{ runner.temp }}
+
+    - run: cmake --build example/build
+
+    - run: ctest --test-dir example/build -V
+
+
+  valgrind-memory:
+    runs-on: ubuntu-latest
+    needs: core
+    timeout-minutes: 10
+
+    steps:
+
+    - name: install valgrind
+      run: |
+        sudo apt update
+        sudo apt install --no-install-recommends valgrind libhdf5-dev
+
+    - uses: actions/checkout@v4
+
+    - run: ctest -Dexclude_label=python -S memcheck.cmake -VV
+
+
+# issue with python loading writer.inc
+  linux-coverage:
+    if: false
+    needs: core
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: install hdf5
+      run: |
+        sudo apt update
+        sudo apt install --no-install-recommends libhdf5-dev
+
+    - name: install Gcovr
+      run: pip install gcovr
+
+    - run: cmake --preset coverage
+    - run: cmake --build --parallel --preset coverage
+
+    - name: Code coverage
+      run: cmake --build --parallel --preset run-coverage
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report-html
+        path: build-coverage/coverage/
+
+
+
+  msys2:
+    timeout-minutes: 30
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        shared: [false]
+        # true works on my computers, but CI is false failing
+
+    env:
+      CMAKE_GENERATOR: "Ninja"
+
+    steps:
+    - uses: msys2/setup-msys2@v2
+      with:
+        update: true
+        install: >-
+          mingw-w64-x86_64-ninja
+          mingw-w64-x86_64-gcc-fortran
+          mingw-w64-x86_64-hdf5
+
+    - name: Put MSYS2_MinGW64 on PATH
+      run: echo "${{ runner.temp }}/msys64/mingw64/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: install h5py
+      run: pip install h5py
+
+    - uses: actions/checkout@v4
+
+    - name: config
+      run: >-
+        cmake --preset multi
+        --install-prefix ${{ runner.temp }}
+        -DBUILD_SHARED_LIBS:BOOL=${{ matrix.shared }}
+
+    - name: Build / test Debug
+      run: cmake --workflow --preset debug
+
+    - name: Build Release
+      run: cmake --workflow --preset release
+
+    - name: install package
+      run: cmake --install build
+
+    - name: example workflow
+      run: cmake -S example -B example/build -DCMAKE_PREFIX_PATH=${{ runner.temp }}
+
+    - run: cmake --build example/build
+
+    - run: ctest --test-dir example/build -V
